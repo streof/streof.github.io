@@ -3,7 +3,7 @@ name: Build and deploy
 on:
   push:
     branches:
-      # Push events to gh-pages branche
+      # Push events to gh-pages branch
       - gh-pages
 
 jobs:
