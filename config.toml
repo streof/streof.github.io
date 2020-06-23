@@ -1,0 +1,45 @@
+# The URL the site will be built for
+base_url = "https://streof.github.io"
+
+# The site title and description; used in feeds by default.
+title = "Down the rabbit hole"
+description = "A blog about stuff I make with tech"
+
+# Whether to automatically compile all Sass files in the sass directory
+compile_sass = true
+
+theme = "terminimal"
+
+# This value can be "left", "right" or "none".
+insert_anchor_links = "none"
+
+# Whether to do syntax highlighting
+# Theme can be customised by setting the `highlight_theme` variable to a theme supported by Zola
+highlight_code = true
+highlight_theme = "gruvbox-dark"
+
+# Whether to build a search index to be used later on by a JavaScript library
+build_search_index = false
+
+# One language
+taxonomies = [
+    {name = "tags"},
+]
+
+[extra]
+# Put all your custom variables here
+accent_color = "green"
+background_color = "dark"
+logo_text = "Down the rabbit hole"
+copyright_html = " "
+
+# menu is enabled by adding menu_items (optional)
+menu_items = [
+    # each of these is optional, name and url are required
+    # $BASE_URL is going to be substituted by base_url from configuration
+    {name = "blog", url = "$BASE_URL"},
+    
+    # tags should only be enabled if you have "tags" taxonomy
+    # see documentation below for more details
+    {name = "tags", url = "$BASE_URL/tags"},
+]
