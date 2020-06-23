@@ -1,0 +1,3 @@
+[submodule "themes/terminimal"]
+	path = themes/terminimal
+	url = https://github.com/streof/zola-theme-terminimal
