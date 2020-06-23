@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Down the rabbit hole</title>
+    
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <meta name="robots" content="noodp"/>
+
+    <link rel="stylesheet" href="https://streof.github.io/style.css">
+    <link rel="stylesheet" href="https://streof.github.io/color/green.css">
+
+        <link rel="stylesheet" href="https://streof.github.io/color/background_dark.css">
+    
+    <link rel="stylesheet" href="https://streof.github.io/font-hack-subset.css">
+
+    </head>
+
+<body class="">
+<div class="container">
+    
+    <header class="header">
+        <div class="header__inner">
+            <div class="header__logo">
+                    
+                <a href="https://streof.github.io" style="text-decoration: none;">
+                    <div class="logo">
+                            Down the rabbit hole
+                        </div>
+                </a>
+            </div>
+        </div>
+
+        <nav class="menu">
+            <ul class="menu__inner">
+                
+                <li class="active"><a href="https://streof.github.io">blog</a></li>
+            
+                <li><a href="https://streof.github.io/tags">tags</a></li>
+            </ul>
+        </nav>
+    
+    </header>
+    
+
+    <div class="content">
+        
+    <div class="post">
+        
+    <h1 class="post-title"><a href="https://streof.github.io/freebsd-wifi-mac/">First FreeBSD experience: something with Wi-Fi and Apple hardware</a></h1>
+    <div class="post-meta-inline">
+        
+    <span class="post-date">
+            2020-06-23
+        </span>
+
+    </div>
+
+    
+        <span class="post-tags-inline">
+                :: tags:&nbsp;
+                <a class="post-tag" href="https://streof.github.io/tags/freebsd/">#freebsd</a>&nbsp;
+                <a class="post-tag" href="https://streof.github.io/tags/drivers/">#drivers</a></span>
+    
+
+        
+        <div class="post-content">
+            <p>Asking <em>What is the Wi-Fi password?</em> gets usually the job done. You're connected
+to the Internet and ready to watch the latest race of
+<a href="https://www.youtube.com/channel/UCYJdpnjuSWVOLgGT9fIzL0g/featured">Jelle's Marble Run</a>.
+But what if your operating system does not know how to control your wireless adapter?</p>
+<span id="continue-reading"></span><h1 id="some-background">Some background</h1>
+<p>When looking back at the history of operating systems, I've always found the BSD
+family quite fascinating. Today, BSD's influence is still reflected in many
+operating systems including the open-source FreeBSD and NetBSD, but also in MacOS.
+A large part of the MacOS userland experience on the command line is BSD. Everytime
+you use <code>cd</code>, <code>grep</code>, <code>ifconfig</code>, <code>ls</code>, <code>ssh</code>, etc on your Mac, you're using
+a BSD program (run for example <code>man cd</code> to see for yourself).</p>
+<p><em>But wait, why FreeBSD in particular? They are many other BSD variants out
+there.</em> My short answer would be beginner friendliness: FreeBSD has a large
+community and well-written documentation.</p>
+<p>So let's move on. I've got FreeBSD installed on a Macbook Pro (Mid 2015)
+running macOS Mojave and the Wi-Fi isn't working, what do I do next? Well,
+2 things came into my mind: </p>
+<ul>
+<li>I need to know more about the built-in Wi-Fi on my laptop.</li>
+<li>Does FreeBSD support this chip? In other words, can I somehow install a program 
+(i.e. device driver) that will allow FreeBSD to control my Wi-Fi?</li>
+</ul>
+<h1 id="system-information">System Information</h1>
+<p>On my laptop, I went to <code>System Information</code> and under <code>Network -&gt; Wi-Fi</code> I found
+the Ethernet interface <code>en0</code>. The first 2 lines are:</p>
+<pre style="background-color:#282828;">
+<code><span style="color:#fdf4c1aa;">Card Type:	        AirPort Extreme
+Firmware Version:	Broadcom BCM43xx
+</span></code></pre>
+<p>That's pretty valuable information already. So I went on to see if I can find
+some information about FreeBSD drivers support.</p>
+<p>When trying to look up general information about Broadcom drivers support on
+FreeBSD you might get quite confusing results. The most reliable information on
+the subject is probably provided by <a href="https://landonf.org/">Landon Fuller</a>, who
+has been working on <em>improving FreeBSD support for Broadcom Wi-Fi devices</em>.
+Another more general source on open-source wireless devices can be
+<a href="https://en.wikipedia.org/wiki/Comparison_of_open-source_wireless_drivers">found on Wikipedia</a>.</p>
+<p>But wait, what was one the reasons to choose FreeBSD in the first place?
+Exactly, its documentation! From my very limited experience, I can highly
+recommend to just stick to the documentation as much as possible at the
+beginning of your journey. So let's see, it looks like
+<a href="https://www.freebsd.org/doc/handbook/kernelconfig-devices.html">Section 8.3</a>
+from the Handbook is exactly what we need. We already know that our vendor is
+Broadcom so we can check if we can find a manual page about it. Luckily there
+are <a href="https://www.freebsd.org/cgi/man.cgi?query=Broadcom&amp;apropos=1&amp;sektion=1&amp;manpath=FreeBSD+12.1-RELEASE+and+Ports&amp;arch=default&amp;format=html">a few man pages</a> where our vendor is mentioned.
+When we scroll through the list we see that
+<a href="https://www.freebsd.org/cgi/man.cgi?query=bwn&amp;sektion=4&amp;apropos=0&amp;manpath=FreeBSD+12.1-RELEASE+and+Ports">bwn(4)</a> and 
+<a href="https://www.freebsd.org/cgi/man.cgi?query=bwi&amp;sektion=4&amp;apropos=0&amp;manpath=FreeBSD+12.1-RELEASE+and+Ports">bwi(4)</a>
+might be exactly what we are looking for. Cool, we're already making quite
+some progress!</p>
+<h1 id="ports-and-packages">Ports and Packages</h1>
+<p>After reading through the manual pages, it turns out that the difference between
+<code>bwn(4)</code> and <code>bwi(4)</code> is that the former uses a newer (i.e. v4) version of the
+Broadcom's firmware whereas the letter uses v3. Furthermore, both require
+an addinational port to be installed (<code>ports/net/bwn-firmware-kmod</code> or
+<code>ports/net/bwi-firmware-kmod</code>, respectively).</p>
+<p>At this point, we don't really need to know which driver we'll need, but
+what we do want to know is what ports are and how to install one without
+direct Internet access. Again the Handbook is the perfect source for this
+kind of information. Scanning through
+<a href="https://www.freebsd.org/doc/handbook/ports.html">Chapter 4</a> we learn that
+a port is a set of Makefiles, patches and description files which has to be
+compiled first, whereas a package is already pre-compiled and available as a
+binary. </p>
+<p>So can we maybe get <code>bwn-firmware-kmod</code> port as a package? A quick search on
+<a href="https://www.freshports.org/net/bwn-firmware-kmod/">FreshPorts</a>
+reveals that there is no package available of this port; reason: <em>this is a
+modified version of a restricted firmware</em>. We also learn that this port
+<em>requires kernel source files in /usr/src</em> and has 1 build dependency called
+<a href="https://www.freshports.org/sysutils/b43-fwcutter/"><code>b43-fwcutter</code></a> which
+is a firmware extractor.</p>
+<h1 id="build-system">Build system</h1>
+<p>To get a better understanding of the build system, let's take a look at the
+<a href="https://github.com/freebsd/freebsd-ports/blob/master/net/bwn-firmware-kmod/Makefile">Makefile</a>
+for <code>bwn-firmware-kmod</code>. As always the Handbook will help us to understand
+what's going on exactly. In this case we need to read 
+<a href="https://www.freebsd.org/doc/en/books/porters-handbook/makefile-distfiles.html">Section 5.4</a>.
+In short, when building the port the compiler will</p>
+<ol>
+<li>Try to find 3 <code>DISTFILES</code> inside a local <code>DISTDIR</code> (which defaults to
+<code>/usr/ports/distfiles</code>) or otherwise try to download them from one of the
+provided <code>MASTER_SITES</code>.</li>
+<li>Then it will use the <code>b43-fwcutter</code> to extract the firmware from the drivers</li>
+<li>The final step is to add some other firmwares and build 3 kernel modules</li>
+</ol>
+<p>Looks pretty straightforward so far, but we are not there yet. The build will
+need some additional files and settings such as requirements declared by the
+<a href="https://www.freebsd.org/doc/en/books/porters-handbook/uses.html"><code>USES</code> macro</a>.
+In this case its values are <code>kmod</code> and <code>uidfix</code>. Moreover, every Makefile
+<a href="https://www.freebsd.org/doc/en/books/porters-handbook/dads-after-port-mk.html">must end</a>
+with <a href="https://github.com/freebsd/freebsd-ports/blob/master/Mk/bsd.port.mk"><code>bsd.port.mk</code></a>
+which also requires a bunch of other files for licensing, checksums, patching, etc.</p>
+<p>To make your life easier I've created a <a href="https://gist.github.com/streof/79b6e92d652336e53bb69d48dca81a4b">small shell script</a>
+that will download the bare minimum you need to successfully build <code>bwn(4)</code> and <code>bwi(4)</code>
+without relying on an Internet connection. The shell script will create and
+populate the following directories under <code>usr/ports</code>:</p>
+<pre style="background-color:#282828;">
+<code><span style="color:#fdf4c1aa;">├── Keywords
+├── Mk
+│   ├── Scripts
+│   ├── Uses
+├── Templates
+├── devel
+│   └── gmake
+├── distfiles
+├── net
+│   ├── bwi-firmware-kmod
+│   └── bwn-firmware-kmod
+└── sysutils
+    └── b43-fwcutter
+</span></code></pre>
+<p>In additional the script will also download the kernel source code and place it
+under <code>usr/src</code>. See 
+<a href="https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/makeworld.html#updating-src-obtaining-src">Section 23.5.3</a>
+and <a href="https://www.freebsd.org/doc/handbook/svn.html#svn-usage">Appendix A.3.5</a>
+for more details about the source code. Make sure to download the correct version, otherwise
+you'll get a <em>version mismatch</em> error when trying to load the module later on.</p>
+<p><em>Note: An alternative approach would be to download the entire ports collection instead
+of cherry-picking.</em></p>
+<h1 id="kernel-modules">Kernel modules</h1>
+<p>Once we have all dependencies we can build our ports! But wait, first we need to
+transfer all these files to our offline FreeBSD installation. Yeah that's right.
+Probably the easiest way is to use an USB flash drive. When partitioning
+we need to make sure that FreeBSD will recognize our flash drive. A safe choice would be
+the Master Boot Record partiion scheme and a FAT format such as FAT32. Depending on your FreeBSD
+settings the OS might try to automatically mount your flash drive. You can run for example
+<code>gpart status</code> to see if your device has been recognized.
+<a href="https://www.freebsd.org/doc/en/books/handbook/disk-organization.html">Section 3.6</a>
+provides more information on how disks are organized in FreeBSD. In my case, I can unmount my USD
+drive with <code>umount /dev/da0s1</code> and then mount it back again with <code>mount -t msdosfs /dev/da0s1 media</code>
+to the <code>media</code> directory.</p>
+<p>Finally we can build our ports! Let's start with <code>bwn(4)</code> (the same steps also apply to <code>bwi(4)</code>).
+According to the ports website we should use <code>make install clean</code> to install the port,
+so let's do that. If the build was successful <code>ls /boot/modules | grep bwn</code> should show
+the three freshly built kernel modules! Now we can add the following lines to <code>/boot/loader.conf</code></p>
+<pre style="background-color:#282828;">
+<code><span style="color:#fdf4c1aa;">if_bwn_load=&quot;YES&quot;      # loaded from /boot/kernel
+if_v4_ucode_load=&quot;YES&quot; # replace by if_v4_lp_ucode_load=&quot;YES&quot; for low power PHY
+</span></code></pre>
+<p>After rebooting our machine (e.g. <code>shutdown -r now</code>), run <code>kldstat</code> to check if the
+kernel modules have indeed been loaded. If something went wrong, you might try to load
+them manually using <code>kldload</code> and check the output of <code>dmesg</code> for some useful debug information.</p>
+<p>Great, we've successfully built our first kernel modules! The next step is crucial and very
+exciting. Run <code>sysctl net.wlan.devices</code> to see if the kernel can operate our Wi-Fi
+device using the driver(s) we just installed. Depending on which driver you used the output
+should probably be either <code>bwn0</code> or <code>bwi0</code>. Cool, this was the hardest part. The rest is
+just a matter of Wi-Fi configurations. There are many resources out there which you can follow.
+One of them is <a href="https://www.youtube.com/watch?v=nasH0VLkqrY">this YouTube video</a> by RoboNuggie.
+Small remark regarding the video: you might want to use <code>service network restart</code> instead of
+<code>service netif restart</code>.</p>
+<h1 id="does-my-wi-fi-finally-work">Does my Wi-Fi finally work?</h1>
+<p>Unfortunately, for me the answer was still <em>No</em>. It turned out that on my machine <code>BCM43xx</code> stands
+for <code>BCM4360</code> (or to be more specific: <code>BCM43602</code>) which is a quite modern chipset and neither
+<code>bwn(4)</code> nor <code>bwi(4)</code> supports it. According to Landon Fuller, FreeBSD
+<a href="https://landonf.org/code/freebsd/Broadcom_WiFi_Improvements.20180122.html">might support</a>
+these newer chipsets in the future.</p>
+<p><em>Note: OpenBSD and NetBSD <a href="https://man.openbsd.org/bwfm">already</a> <a href="https://netbsd.gw.com/cgi-bin/man-cgi?bwfm++NetBSD-current">support</a> BCM43602.</em></p>
+<h1 id="easy-way-out">Easy way out</h1>
+<p>After running out of options, I was forced to use the Ralink wireless adapter from my Raspberry Pi.
+Luckily, the RT5370 chipset is supported by the <code>run(4)</code> driver which is part of the FreeBSD kernel.
+So adding the following two lines to <code>/boot/loader.conf</code> sealed the deal:</p>
+<pre style="background-color:#282828;">
+<code><span style="color:#fdf4c1aa;">if_run_load=&quot;YES&quot;
+runfw_load=&quot;YES&quot;
+</span></code></pre>
+<p>Now I can finally watch the <a href="https://www.youtube.com/watch?v=pt5DHwyEL_E">latest race</a>
+of Jelle's Marble Run on FreeBSD! </p>
+
+        </div>
+
+        
+    </div>
+
+    </div>
+
+    
+    <footer class="footer">
+        <div class="footer__inner">
+                <div class="copyright copyright--user"> </div>
+            </div>
+    </footer>
+    
+
+</div>
+</body>
+
+</html>
